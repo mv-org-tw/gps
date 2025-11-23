@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 元界創想 緊急資料傳送系統 - 隱藏測試模式 V5 (修復長按)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: #e6e6fa; 
+            color: #333;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #f04747; 
+            margin-bottom: 20px;
+        }
+        /* 選擇類型區塊 */
+        .type-selector {
+            margin-bottom: 25px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        .type-selector label, .type-selector select {
+            font-size: 1.1em;
+            margin-right: 15px;
+        }
+
+        /* 按鈕樣式 */
+        .button-group button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+            font-weight: bold;
+            margin: 0 10px;
+        }
+        #emergency-button {
+            background-color: #f04747; /* 紅色 - 緊急 */
+            color: white;
+        }
+        #emergency-button:hover {
+            background-color: #c0392b;
+        }
+
+        #status {
+            margin-top: 30px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1.1em;
+            color: #555;
+            min-height: 20px;
+            background-color: #f9f9f9;
+        }
+
+        /* 聲明區塊樣式 - 作為長按觸發器 (無視覺提示) */
+        .declaration {
+            text-align: left;
+            padding: 20px;
+            border: 1px solid #e0b0ff; 
+            border-radius: 5px;
+            background-color: #fcf8ff;
+            margin-top: 30px;
+            /* 保持預設游標，不洩露可互動性 */
+            cursor: default;
+        }
+        .declaration h4 {
+            color: #4b0082; 
+        }
+        
+        /* 確保長按目標的文字不會被選中，這有助於在移動設備上穩定長按 */
+        .declaration p {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        
+        #trigger-text {
+            margin-top: 15px; 
+            font-weight: bold; 
+            color: #cc0000;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🚨 元界創想 緊急資料傳送系統 🚨</h1>
+
+        <div class="type-selector">
+            <label for="report-type">選擇報告類型:</label>
+            <select id="report-type">
+                <option value="FIRE">火災 (FIRE)</option>
+                <option value="MEDICAL">醫療緊急 (MEDICAL)</option>
+                <option value="SECURITY">安全威脅 (SECURITY)</option>
+                <option value="INFRASTRUCTURE">基礎設施故障 (INFRASTRUCTURE)</option>
+                <option value="OTHER">其他 (OTHER)</option>
+            </select>
+        </div>
+        
+        <div class="button-group">
+            <button id="emergency-button" onclick="triggerDataTransmission(false, null)">
+                🚨 立即緊急傳送
+            </button>
+        </div>
+
+        <p id="status">等待操作...</p>
+
+        <hr style="margin-top: 30px;">
+
+        <div id="test-trigger-area" class="declaration">
+            <h3>🔒 安全聲明與資料用途聲明</h3>
+            
+            <h4>1. 資料收集項目</h4>
+            <p>當您點擊按鈕時，本系統將立即且單次地收集以下資訊：</p>
+            <ul>
+                <li><strong>地理位置資料 (Location):</strong> 經度、緯度及精確度。（需經您明確允許）</li>
+                <li><strong>設備資訊 (Device):</strong> 瀏覽器類型、作業系統平台、螢幕解析度、CPU 核心數。</li>
+            </ul>
+
+            <h4>2. 資料用途說明</h4>
+            <p>所收集的資料僅用於**緊急情況下的資料傳送與協調目的**：</p>
+            <ul>
+                <li><strong>緊急定位：</strong> 提供您的精確位置，以利於緊急應變小組迅速定位。</li>
+                <li><strong>環境評估：</strong> 協助判斷數據的來源環境，優化接收端的處理流程。</li>
+            </ul>
+
+            <h4>3. 安全與隱私保護</h4>
+            <ul>
+                <li><strong>單次傳輸：</strong> 僅在您每次點擊按鈕時執行單次、非持續性的傳輸。</li>
+                <li><strong>目標限制：</strong> 資料僅傳送至一個預先設定的 **Discord Webhook URL**。</li>
+                <li><strong>無第三方分享：</strong> 除非法律要求或涉及生命安全，否則不會分享給任何第三方非緊急服務機構。</li>
+            </ul>
+            
+            <p id="trigger-text">
+                ⚠️ 透過使用本系統，您即表示理解並同意上述資料的收集與緊急用途。
+            </p>
+        </div>
+        </div>
+
+    <script>
+        // *******************************************************************
+        // *** 🔴 關鍵設定：Discord Webhook URL 🔴 ***
+        const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1354447077265903748/BKMp3EqdwM7zES2L-Fo1_IPEAT5atKV2Svggu31kyoaiAUj85bLPIdLq2CXyeTnYkRgH"; 
+        // *******************************************************************
+        
+        const statusElement = document.getElementById('status');
+        const testTriggerArea = document.getElementById('test-trigger-area'); // 整個聲明區塊
+        
+        const HOLD_DURATION = 3000; // 3秒
+        let holdTimer = null;
+        let isHolding = false;
+        const TEST_REPORT_TYPE = 'TEST_REPORT'; 
+
+        // --- 1. 隱藏長按測試模式觸發邏輯 ---
+
+        function startHold(event) {
+            // 檢查是否是主要按鈕 (左鍵或觸控)
+            if (event.button !== 0 && event.type !== 'touchstart') return; 
+            if (isHolding) return; 
+
+            isHolding = true;
+
+            // 確保觸控時不顯示上下文選單（修復按不了的主要步驟）
+            if (event.type === 'touchstart') {
+                 event.preventDefault(); 
+            }
+            
+            // ⛔ 無視覺回饋，無狀態提示 ⛔
+            
+            holdTimer = setTimeout(() => {
+                // 3秒按住成功，啟動測試傳輸
+                statusElement.innerHTML = "🤫 隱藏指令已觸發：正在啟動測試傳送... (類型: 系統測試)";
+                triggerDataTransmission(true, TEST_REPORT_TYPE); 
+                holdTimer = null; // Mark as successfully triggered
+                endHold(); // Cleanup
+            }, HOLD_DURATION);
+        }
+
+        function endHold() {
+            if (!isHolding) return;
+            
+            clearTimeout(holdTimer);
+            
+            // 如果定時器還沒觸發，保持狀態欄靜默
+            
+            holdTimer = null;
+            isHolding = false;
+        }
+
+        // 綁定事件監聽器到整個聲明區塊
+        testTriggerArea.addEventListener('mousedown', startHold);
+        testTriggerArea.addEventListener('mouseup', endHold);
+        testTriggerArea.addEventListener('mouseleave', endHold);
+        testTriggerArea.addEventListener('touchstart', startHold); 
+        testTriggerArea.addEventListener('touchend', endHold);
+
+
+        // --- 2. 資料收集與傳輸核心函數 (保持不變) ---
+
+        function getDeviceInfo() {
+            return {
+                platform: navigator.platform || 'N/A',
+                os_browser: navigator.userAgent || 'N/A',
+                screen_size: `${window.screen.width}x${window.screen.height}`,
+                cores: navigator.hardwareConcurrency || 'N/A'
+            };
+        }
+
+        function triggerDataTransmission(isTest, forcedType = null) {
+            const reportType = isTest ? forcedType : document.getElementById('report-type').value;
+            
+            if (!reportType) {
+                statusElement.innerHTML = "❌ **錯誤:** 無法確定報告類型。";
+                return;
+            }
+
+            if (!isTest) {
+                statusElement.innerHTML = `🔄 正在獲取位置與設備資訊... (緊急傳輸) 類型: ${reportType}`;
+            }
+            
+            const deviceInfo = getDeviceInfo();
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => sendDataWrapper(position, deviceInfo, reportType, isTest), 
+                    (error) => handleError(error, deviceInfo, reportType, isTest), 
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 7000, 
+                        maximumAge: 0
+                    }
+                );
+            } else {
+                statusElement.innerHTML = "⚠️ 瀏覽器不支援定位功能。<br>正在傳送已收集的設備資訊...";
+                sendToDiscord(null, null, deviceInfo, "⚠️ 瀏覽器定位服務不可用", reportType, isTest);
+            }
+        }
+
+        function sendDataWrapper(position, deviceInfo, reportType, isTest) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            
+            statusElement.innerHTML = `✅ 已獲取所有資料：緯度: ${latitude.toFixed(6)}, 經度: ${longitude.toFixed(6)}<br>正在傳送至 Discord...`;
+
+            sendToDiscord(latitude, longitude, deviceInfo, "✅ 成功取得位置", reportType, isTest); 
+        }
+
+        function handleError(error, deviceInfo, reportType, isTest) {
+            let errorMessage = "";
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMessage = "用戶拒絕了地理位置請求。";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMessage = "位置資訊無法取得 (網路或訊號問題)。";
+                    break;
+                case error.TIMEOUT:
+                    errorMessage = "請求超時。";
+                    break;
+                default:
+                    errorMessage = "發生未知錯誤。";
+                    break;
+            }
+            console.error("定位失敗:", errorMessage);
+            statusElement.innerHTML = `⚠️ 定位失敗: ${errorMessage} <br>正在傳送已收集的設備資訊...`;
+            sendToDiscord(null, null, deviceInfo, `⚠️ 定位錯誤: ${errorMessage}`, reportType, isTest);
+        }
+
+        function sendToDiscord(latitude, longitude, deviceInfo, statusText, reportType, isTest) {
+            // 注意: 為了安全與符合規範，地圖連結的網址部分被修改為示例。
+            const mapLink = (latitude && longitude) 
+                ? `http://googleusercontent.com/maps.google.com/9${latitude},${longitude}` 
+                : "https://developers.google.com/maps/documentation/javascript/geolocation"; 
+
+            const isLocationFound = latitude && longitude;
+            let color;
+            
+            if (isTest) {
+                color = 16763904; 
+            } else {
+                color = isLocationFound ? 15746880 : 5592405; 
+            }
+
+            const titlePrefix = isTest ? "[🧪 TEST MODE] " : "🚨 [EMERGENCY] ";
+            const content = `${titlePrefix} **報告類型: ${reportType}**`;
+
+            const locationFields = isLocationFound ? [
+                {
+                    name: "📍 緯度 (Latitude)",
+                    value: latitude.toFixed(6).toString(),
+                    inline: true
+                },
+                {
+                    name: "📍 經度 (Longitude)",
+                    value: longitude.toFixed(6).toString(),
+                    inline: true
+                },
+                {
+                    name: "🗺️ 地圖連結",
+                    value: `[點擊查看位置](${mapLink})`,
+                    inline: false
+                }
+            ] : [
+                {
+                    name: "🚨 位置狀態",
+                    value: statusText,
+                    inline: false
+                }
+            ];
+
+            const payload = {
+                content: content,
+                embeds: [
+                    {
+                        title: `${titlePrefix} ${statusText} - 報告類型: ${reportType}`,
+                        color: color,
+                        url: mapLink,
+                        fields: [
+                            ...locationFields,
+                            
+                            {
+                                name: "--- 💻 設備資訊 ---",
+                                value: " ",
+                                inline: false
+                            },
+                            {
+                                name: "🖥️ 作業系統/平台",
+                                value: deviceInfo.platform,
+                                inline: true
+                            },
+                            {
+                                name: "📏 螢幕解析度",
+                                value: deviceInfo.screen_size,
+                                inline: true
+                            },
+                            {
+                                name: "⚙️ CPU 核心數",
+                                value: deviceInfo.cores.toString(),
+                                inline: true
+                            },
+                            {
+                                name: "🆔 User Agent (瀏覽器/OS 資訊)",
+                                value: deviceInfo.os_browser,
+                                inline: false
+                            },
+                        ],
+                        footer: {
+                            text: "緊急資料傳送時間"
+                        },
+                        timestamp: new Date().toISOString()
+                    }
+                ]
+            };
+
+            fetch(DISCORD_WEBHOOK_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            })
+            .then(response => {
+                if (response.ok) {
+                    statusElement.innerHTML = '✅ **傳送完成！** 緊急資料已成功發送到 Discord！';
+                } else {
+                    statusElement.innerHTML = `❌ **傳送失敗！** (${response.status}) 請檢查 Webhook URL 是否正確或失效。`;
+                }
+            })
+            .catch(error => {
+                console.error('網路錯誤:', error);
+                statusElement.innerHTML = '❌ 發生網路錯誤，無法傳送資料。';
+            });
+        }
+    </script>
+
+</body>
+</html>
